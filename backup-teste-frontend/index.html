@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NoteKeeper App</title>
+  
+  <style>
+    /* Estilos gerais */
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f0f2f5; margin: 0; }
+    .container { padding: 20px; max-width: 1200px; margin: auto; }
+    /* Estilos do Formulário de Login */
+    .login-container { background-color: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); width: 100%; max-width: 400px; margin: 100px auto; text-align: center; }
+    input[type="email"], input[type="password"], textarea, input[type="text"] { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #dddfe2; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+    button { width: 100%; padding: 14px; border: none; border-radius: 6px; background-color: #1877f2; color: white; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 12px; }
+    /* Estilos do Dashboard */
+    .header { display: flex; justify-content: space-between; align-items: center; background-color: white; padding: 10px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .logout-button { background-color: #f44336; width: auto; padding: 10px 15px; font-size: 14px; }
+    .create-note-form { background-color: white; padding: 20px; margin-top: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-top: 20px; }
+    .note-card { background-color: #fff9c4; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; }
+    .note-card h3 { margin-top: 0; }
+    .note-actions { margin-top: 15px; display: flex; gap: 10px; }
+    .note-button { font-size: 12px; padding: 5px 10px; width: auto; font-weight: normal; }
+    .edit-button { background-color: #ff9800; }
+    .delete-button { background-color: #f44336; }
+    .save-button { background-color: #4CAF50; }
+  </style>
+</head>
+<body>
+
+  <div id="root"></div>
+
+  <!-- Bibliotecas externas -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+  <!-- O nosso código React -->
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // --- COMPONENTE DE LOGIN ---
+    function LoginPage({ onLoginSuccess }) {
+        // ... (código do LoginPage como antes, sem alterações)
+        const [email, setEmail] = useState('');
+        const [password, setPassword] = useState('');
+        const [error, setError] = useState('');
+
+        const handleSubmit = async (event) => {
+            event.preventDefault();
+            try {
+            const config = { headers: { 'Content-Type': 'application/json' } };
+            const { data } = await axios.post('http://localhost:5000/api/users/login', { email, password }, config);
+            localStorage.setItem('user', JSON.stringify(data));
+            onLoginSuccess(data);
+            } catch (err) {
+            setError('Email ou senha inválidos.');
+            }
+        };
+
+        return (
+            <div className="login-container">
+            <h1>Entrar no NoteKeeper</h1>
+            <form onSubmit={handleSubmit}>
+                <input type="email" placeholder="Endereço de E-mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <input type="password" placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <button type="submit">Entrar</button>
+                {error && <p style={{color: 'red', marginTop: '10px'}}>{error}</p>}
+            </form>
+            </div>
+        );
+    }
+
+    // --- COMPONENTE DO DASHBOARD ---
+    function DashboardPage({ user, onLogout }) {
+      const [notes, setNotes] = useState([]);
+      const [newTitle, setNewTitle] = useState('');
+      const [newContent, setNewContent] = useState('');
+      
+      // Estados para a edição
+      const [editingNoteId, setEditingNoteId] = useState(null);
+      const [editingTitle, setEditingTitle] = useState('');
+      const [editingContent, setEditingContent] = useState('');
+
+      const fetchNotes = async () => {
+        const config = { headers: { Authorization: `Bearer ${user.token}` } };
+        const { data } = await axios.get('http://localhost:5000/api/notes', config);
+        setNotes(data);
+      };
+
+      useEffect(() => { fetchNotes(); }, [user.token]);
+      
+      const handleCreateNote = async (e) => {
+        e.preventDefault();
+        const config = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` } };
+        const { data: newNote } = await axios.post('http://localhost:5000/api/notes', { title: newTitle, content: newContent }, config);
+        setNotes([newNote, ...notes]);
+        setNewTitle(''); setNewContent('');
+      };
+
+      const handleDeleteNote = async (noteId) => {
+        if (window.confirm('Tem a certeza que quer apagar esta nota?')) {
+            const config = { headers: { Authorization: `Bearer ${user.token}` } };
+            await axios.delete(`http://localhost:5000/api/notes/${noteId}`, config);
+            setNotes(notes.filter(note => note._id !== noteId));
+        }
+      };
+      
+      const handleStartEditing = (note) => {
+          setEditingNoteId(note._id);
+          setEditingTitle(note.title);
+          setEditingContent(note.content);
+      };
+
+      const handleUpdateNote = async (noteId) => {
+        const config = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` } };
+        const { data: updatedNote } = await axios.put(
+            `http://localhost:5000/api/notes/${noteId}`, 
+            { title: editingTitle, content: editingContent }, 
+            config
+        );
+        setNotes(notes.map(note => (note._id === noteId ? updatedNote : note)));
+        setEditingNoteId(null); // Sai do modo de edição
+      };
+
+      return (
+        <div>
+          <header className="header">
+            <h2>Bem-vindo, {user.name}!</h2>
+            <button className="logout-button" onClick={onLogout}>Sair</button>
+          </header>
+          <div className="container">
+            <div className="create-note-form">
+              <h3>Criar Nova Nota</h3>
+              <form onSubmit={handleCreateNote}>
+                <input type="text" placeholder="Título (opcional)" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
+                <textarea rows="4" placeholder="Escreva a sua nota..." value={newContent} onChange={(e) => setNewContent(e.target.value)} required></textarea>
+                <button type="submit" style={{backgroundColor: '#4CAF50'}}>Adicionar Nota</button>
+              </form>
+            </div>
+
+            <h3 style={{marginTop: '40px'}}>As suas notas</h3>
+            <div className="notes-grid">
+              {notes.map(note => (
+                <div key={note._id} className="note-card" style={{backgroundColor: note.color || '#FFF9C4'}}>
+                  {editingNoteId === note._id ? (
+                    // Vista de Edição
+                    <div>
+                        <input type="text" value={editingTitle} onChange={(e) => setEditingTitle(e.target.value)} />
+                        <textarea rows="4" value={editingContent} onChange={(e) => setEditingContent(e.target.value)}></textarea>
+                        <button className="note-button save-button" onClick={() => handleUpdateNote(note._id)}>Guardar</button>
+                    </div>
+                  ) : (
+                    // Vista Normal
+                    <div>
+                        <h3>{note.title}</h3>
+                        <p>{note.content}</p>
+                    </div>
+                  )}
+                  <div className="note-actions">
+                    <button className="note-button edit-button" onClick={() => handleStartEditing(note)}>Editar</button>
+                    <button className="note-button delete-button" onClick={() => handleDeleteNote(note._id)}>Apagar</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    // --- COMPONENTE PRINCIPAL DA APLICAÇÃO ---
+    function App() {
+        // ... (código do App como antes, sem alterações)
+        const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || null);
+
+        const handleLoginSuccess = (userData) => {
+            setUser(userData);
+        };
+
+        const handleLogout = () => {
+            localStorage.removeItem('user');
+            setUser(null);
+        };
+
+        return (
+            <div>
+            {user ? (
+                <DashboardPage user={user} onLogout={handleLogout} />
+            ) : (
+                <LoginPage onLoginSuccess={handleLoginSuccess} />
+            )}
+            </div>
+        );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+
+</body>
+</html>

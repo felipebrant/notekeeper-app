@@ -1,0 +1,53 @@
+Roadmap do Projeto: Próximos Passos
+Você construiu uma aplicação full-stack completa e funcional. Agora podemos focar-nos em adicionar as funcionalidades finais que planeámos e em refinar a experiência do utilizador.
+
+Prioridade 1: Implementar o CRUD de Marcadores (Tags)
+Esta é a última grande funcionalidade que falta do nosso plano original. O backend já está 100% pronto para isto, só precisamos de construir a interface no frontend.
+
+1. Interface para Gerir Marcadores:
+
+Podemos adicionar uma nova secção no painel (talvez um botão no cabeçalho ou uma barra lateral) que abre um gestor de marcadores.
+
+Nesse gestor, o utilizador poderá ver a lista dos seus marcadores, criar novos (com nome e cor) e apagar ou editar os existentes.
+
+2. Associar Marcadores às Notas:
+
+No pop-up de criação/edição de notas, adicionaremos uma secção onde o utilizador pode escolher um ou mais dos seus marcadores para aplicar à nota.
+
+Mostraremos os marcadores associados em cada cartão de nota, talvez como pequenas "pílulas" coloridas.
+
+Prioridade 2: Melhorias de Qualidade e Experiência (UX)
+Estes são os detalhes que fazem uma aplicação parecer profissional e agradável de usar.
+
+Animações e Transições Suaves:
+
+Podemos adicionar animações subtis quando as notas aparecem ou desaparecem do ecrã.
+
+Usar transições suaves quando os botões são pressionados ou quando os elementos mudam de estado.
+
+Funcionalidade de Pesquisa:
+
+Adicionar uma barra de pesquisa no topo do painel que permite ao utilizador filtrar as notas por título ou conteúdo em tempo real.
+
+Feedback ao Utilizador Melhorado:
+
+Substituir o window.confirm para apagar uma nota por uma caixa de diálogo personalizada e mais elegante.
+
+Mostrar um indicador de "a carregar" (loading spinner) enquanto as notas estão a ser buscadas do backend, para que o utilizador saiba que a aplicação está a trabalhar.
+
+Prioridade 3: Passos para o Futuro (Nível Avançado)
+Quando tudo o resto estiver concluído, podemos pensar em levar o projeto para o próximo nível.
+
+Guardar no GitHub: Agora é o momento perfeito para usar o Git que instalámos. Podemos guardar todo o seu projeto num repositório no GitHub. Isto não só cria um backup seguro, como também é essencial para o seu portfólio profissional.
+
+Deploy (Publicar a Aplicação):
+
+Podemos publicar o seu backend num serviço gratuito como o Render.
+
+Podemos publicar o seu frontend num serviço gratuito como o Vercel ou Netlify.
+
+O resultado final seria um link público (ex: meu-notekeeper.vercel.app) que você poderia usar em qualquer computador e partilhar com quem quisesse!
+
+**A minha sugestão seria começarmos pela Prioridade 1: Implementar o CRUD de Marcadores. É o próximo passo lógico e irá completar todas as funcionalidades de organização que planeámos.
+
+O que lhe parece? Qual destes próximos passos o deixa mais entusiasmado para começar?
