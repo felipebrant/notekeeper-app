@@ -15,16 +15,28 @@ Uma aplicação web de anotações, estilo Google Keep, construída com o stack 
 
 ## ⚙️ Como Executar
 
-**1. Iniciar o Backend:**
-```bash
+**1. Iniciar o Backend (API)**
+# Navegue para a pasta do backend
 cd backend
+
+# Instale as dependências (apenas na primeira vez)
 npm install
+
+# Inicie o servidor
 npm run dev
 
-**1. Iniciar o Frontend:**
-(novo terminal)
-
+**2. Iniciar o Frontend (Interface)**
+# Navegue para a pasta do frontend
 cd frontend
+
+# Instale as dependências (apenas na primeira vez)
 npm install
+
+# Inicie o servidor de desenvolvimento
 npm run dev
+
+A aplicação estará acessível em http://localhost:5173 (ou no link fornecido pelo Vite).
+
+**Projeto desenvolvido por Felipe Felix Brant.**
+
 
