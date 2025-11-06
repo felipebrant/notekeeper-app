@@ -1,54 +1,69 @@
-    import React, { useState, useEffect } from 'react';
-    import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-    import LoginPage from './pages/LoginPage';
-    import RegisterPage from './pages/RegisterPage';
-    import DashboardPage from './pages/DashboardPage';
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import DashboardPage from './pages/DashboardPage';
+import TrashPage from './pages/TrashPage';
 
-    function App() {
-      const [user, setUser] = useState(null);
-      const [loading, setLoading] = useState(true); // Estado para saber se ainda estamos a verificar o login
+export default function App() {
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
-      useEffect(() => {
-        const loggedUserJSON = localStorage.getItem('user');
-        if (loggedUserJSON) {
-          setUser(JSON.parse(loggedUserJSON));
-        }
-        setLoading(false); // Terminámos a verificação inicial
-      }, []);
-      
-      const handleLogin = (userData) => {
-        localStorage.setItem('user', JSON.stringify(userData));
-        setUser(userData);
-      };
-      
-      const handleLogout = () => {
-        localStorage.removeItem('user');
-        setUser(null);
-      };
-
-      if (loading) {
-        return <div>A carregar...</div>; 
-      }
-
-      return (
-        <Router>
-          <Routes>
-            <Route 
-              path="/" 
-              element={!user ? <LoginPage onLogin={handleLogin} /> : <Navigate to="/dashboard" />} 
-            />
-            <Route 
-              path="/register" 
-              element={!user ? <RegisterPage /> : <Navigate to="/dashboard" />} 
-            />
-            <Route 
-              path="/dashboard" 
-              element={user ? <DashboardPage user={user} onLogout={handleLogout} /> : <Navigate to="/" />} 
-            />
-          </Routes>
-        </Router>
-      );
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    if (storedUser && token) {
+      setUser(JSON.parse(storedUser));
     }
+  }, []);
 
-    export default App;
-    
+  const handleLogin = (userData, token) => {
+    localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('token', token);
+    setUser(userData);
+    navigate('/dashboard');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    setUser(null);
+    navigate('/');
+  };
+
+  return (
+    <Routes>
+      {/* Rotas Públicas (Login e Registo) */}
+      <Route
+        path="/"
+        element={
+          !user ? <LoginPage onLogin={handleLogin} /> : <DashboardPage user={user} onLogout={handleLogout} />
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          !user ? <RegisterPage /> : <DashboardPage user={user} onLogout={handleLogout} />
+        }
+      />
+      
+      {/* Rotas Privadas (Dashboard e Lixeira) */}
+      <Route
+        path="/dashboard"
+        element={
+          // --- A CORREÇÃO ESTÁ AQUI ---
+          // Agora estamos a passar 'user={user}' para o Dashboard
+          user ? <DashboardPage user={user} onLogout={handleLogout} /> : <LoginPage onLogin={handleLogin} />
+        }
+      />
+      <Route
+        path="/trash"
+        element={
+          // --- E AQUI TAMBÉM ---
+          // E também para a página da Lixeira
+          user ? <TrashPage user={user} onLogout={handleLogout} /> : <LoginPage onLogin={handleLogin} />
+        }
+      />
+    </Routes>
+  );
+}

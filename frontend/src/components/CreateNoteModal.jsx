@@ -1,84 +1,157 @@
-    import React, { useState, useEffect } from 'react';
-    import Modal from 'react-modal';
-    
-    Modal.setAppElement('#root');
-    const noteColors = ['#FFFFFF', '#F28B82', '#FBBC04', '#FFF475', '#CCFF90', '#A7FFEB', '#CBF0F8', '#AECBFA'];
+import React, { useState, useEffect } from 'react';
+import ReactModal from 'react-modal';
+import { FaTimes } from 'react-icons/fa';
 
-    function CreateNoteModal({ isOpen, onClose, onSave, noteToEdit, allTags }) {
-      const [title, setTitle] = useState('');
-      const [content, setContent] = useState('');
-      const [color, setColor] = useState(noteColors[0]);
-      const [selectedTags, setSelectedTags] = useState([]); // Estado para os marcadores selecionados
+// As 8 cores que definimos
+const NOTE_COLORS = [
+  '#FFFFFF',
+  '#F28B82',
+  '#FBBC04',
+  '#FFF475',
+  '#CCFF90',
+  '#A7FFEB',
+  '#CBF0F8',
+  '#AECBFA',
+];
 
-      useEffect(() => {
-        if (noteToEdit) {
-          setTitle(noteToEdit.title || '');
-          setContent(noteToEdit.content || '');
-          setColor(noteToEdit.color || noteColors[0]);
-          // Pré-seleciona os marcadores da nota a ser editada
-          setSelectedTags(noteToEdit.tags ? noteToEdit.tags.map(t => t._id) : []);
-        } else {
-          setTitle('');
-          setContent('');
-          setColor(noteColors[0]);
-          setSelectedTags([]);
-        }
-      }, [noteToEdit, isOpen]);
-      
-      const handleTagClick = (tagId) => {
-        // Adiciona ou remove o ID do marcador da lista de selecionados
-        setSelectedTags(prev => 
-            prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
-        );
-      };
+ReactModal.setAppElement('#root');
 
-      const handleSave = () => {
-        const noteData = { title, content, color, tags: selectedTags }; // Inclui os IDs dos marcadores
-        if (noteToEdit) {
-          noteData._id = noteToEdit._id;
-        }
-        onSave(noteData);
-      };
+export default function CreateNoteModal({
+  isOpen,
+  onRequestClose,
+  onSaveNote,
+  noteToEdit,
+  tags,
+}) {
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [color, setColor] = useState(NOTE_COLORS[0]);
+  const [selectedTags, setSelectedTags] = useState([]);
 
-      return (
-        <Modal
-          isOpen={isOpen}
-          onRequestClose={onClose}
-          className="modal-content"
-          overlayClassName="modal-overlay"
-        >
-          <h2>{noteToEdit ? 'Editar Nota' : 'Criar Nova Nota'}</h2>
-          <input type="text" placeholder="Título" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <textarea placeholder="Criar uma nota..." value={content} onChange={(e) => setContent(e.target.value)} />
-          
-          {/* Seletor de Marcadores */}
-          <div className="tag-selector">
-              <h4>Marcadores</h4>
-              <div className="tag-selector-list">
-                  {allTags.map(tag => (
-                      <div 
-                        key={tag._id}
-                        className={`tag-selector-item ${selectedTags.includes(tag._id) ? 'selected' : ''}`}
-                        onClick={() => handleTagClick(tag._id)}
-                      >
-                          {tag.name}
-                      </div>
-                  ))}
-              </div>
-          </div>
-
-          <div className="modal-actions">
-            <div className="color-picker">
-              {noteColors.map(c => ( <div key={c} className={`color-dot ${color === c ? 'selected' : ''}`} style={{ backgroundColor: c }} onClick={() => setColor(c)} /> ))}
-            </div>
-            <div className="modal-button-group">
-              <button className="modal-button cancel-button" onClick={onClose}>Cancelar</button>
-              <button className="modal-button save-button" onClick={handleSave}>Guardar</button>
-            </div>
-          </div>
-        </Modal>
-      );
+  // Se estivermos a editar uma nota, preenchemos os campos
+  useEffect(() => {
+    if (noteToEdit) {
+      setTitle(noteToEdit.title);
+      setContent(noteToEdit.content);
+      setColor(noteToEdit.color || NOTE_COLORS[0]);
+      setSelectedTags(noteToEdit.tags || []);
+    } else {
+      // Se for para criar uma nova, limpamos tudo
+      setTitle('');
+      setContent('');
+      setColor(NOTE_COLORS[0]);
+      setSelectedTags([]);
     }
+  }, [noteToEdit, isOpen]);
 
-    export default CreateNoteModal;
-    
+  const handleToggleTag = (tagId) => {
+    setSelectedTags((prevTags) =>
+      prevTags.includes(tagId)
+        ? prevTags.filter((id) => id !== tagId)
+        : [...prevTags, tagId]
+    );
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!content.trim()) return; // Conteúdo é obrigatório
+
+    onSaveNote({
+      title,
+      content,
+      color,
+      tags: selectedTags,
+    });
+    onRequestClose(); // Fecha o modal após guardar
+  };
+
+  return (
+    <ReactModal
+      isOpen={isOpen}
+      onRequestClose={onRequestClose}
+      className="modal" // <- Estilo principal do modal
+      overlayClassName="modal-overlay" // <- Estilo do fundo
+      contentLabel={noteToEdit ? 'Editar Nota' : 'Criar Nova Nota'}
+    >
+      <div className="modal-header">
+        <h2>{noteToEdit ? 'Editar Nota' : 'Criar Nova Nota'}</h2>
+        <button onClick={onRequestClose} className="modal-close-button">
+          <FaTimes />
+        </button>
+      </div>
+      <form onSubmit={handleSubmit} className="modal-body">
+        <input
+          type="text"
+          placeholder="Título (opcional)"
+          className="modal-input" // <- Estilo do campo de texto
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+        <textarea
+          placeholder="Escreva a sua nota..."
+          className="modal-textarea" // <- Estilo da área de texto
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          required
+        />
+
+        {/* Seletor de Marcadores */}
+        <div className="tag-selector">
+          <h4>Marcadores</h4>
+          <div className="tag-selector-list">
+            {tags.length > 0 ? (
+              tags.map((tag) => (
+                <div
+                  key={tag._id}
+                  className={`tag-selector-item ${
+                    selectedTags.includes(tag._id) ? 'selected' : ''
+                  }`}
+                  onClick={() => handleToggleTag(tag._id)}
+                  style={{
+                    backgroundColor: selectedTags.includes(tag._id)
+                      ? tag.color
+                      : '#fff',
+                    borderColor: tag.color,
+                  }}
+                >
+                  {tag.name}
+                </div>
+              ))
+            ) : (
+              <p style={{ fontSize: '0.9rem', color: '#868e96' }}>
+                Nenhum marcador criado.
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="modal-actions">
+          {/* Seletor de Cores */}
+          <div className="color-picker">
+            {NOTE_COLORS.map((c) => (
+              <div
+                key={c}
+                className={`color-dot ${color === c ? 'selected' : ''}`}
+                style={{ backgroundColor: c }}
+                onClick={() => setColor(c)}
+              />
+            ))}
+          </div>
+          {/* Botões */}
+          <div className="modal-button-group">
+            <button
+              type="button"
+              className="button-secondary"
+              onClick={onRequestClose}
+            >
+              Cancelar
+            </button>
+            <button type="submit" className="button-primary">
+              Guardar
+            </button>
+          </div>
+        </div>
+      </form>
+    </ReactModal>
+  );
+}
