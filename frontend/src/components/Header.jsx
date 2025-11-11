@@ -1,47 +1,43 @@
-import React, { useState } from 'react';
-import { FaLightbulb, FaTag, FaTrash } from 'react-icons/fa'; // 1. Importar o FaTrash
-import { Link } from 'react-router-dom'; // 2. Importar o Link
-import TagManagerModal from './TagManagerModal';
+import React from 'react';
+// 1. Importamos os ícones de Sol e Lua
+import { FaLightbulb, FaSearch, FaSun, FaMoon } from 'react-icons/fa';
 
-export default function Header({ user, onLogout }) {
-  const [isTagModalOpen, setIsTagModalOpen] = useState(false);
-
+// 2. Recebe 'theme' e 'toggleTheme' do Layout.jsx
+export default function Header({ user, onLogout, theme, toggleTheme }) {
   return (
-    <>
-      <header className="header">
-        <div className="header-content">
-          <Link to="/" className="header-logo-link"> {/* 3. Link no logo */}
-            <FaLightbulb className="header-icon" />
-            <h1>NoteKeeper</h1>
-          </Link>
-          <div className="header-user-info">
-            <span>Olá, {user.name}</span>
-            {/* 4. Link para gerir marcadores */}
-            <button
-              onClick={() => setIsTagModalOpen(true)}
-              className="header-button tag-manager-button"
-              title="Gerir Marcadores"
-            >
-              <FaTag />
-            </button>
-            {/* 5. NOVO BOTÃO PARA A LIXEIRA */}
-            <Link
-              to="/trash"
-              className="header-button trash-button"
-              title="Lixeira"
-            >
-              <FaTrash />
-            </Link>
-            <button onClick={onLogout} className="header-button logout-button">
-              Sair
-            </button>
-          </div>
+    <header className="app-header">
+      
+      {/* Parte Esquerda: Logo e Título */}
+      <div className="header-group header-left">
+        <FaLightbulb className="header-icon" />
+        <h1>NoteKeeper</h1>
+      </div>
+      
+      {/* Parte Central: Pesquisa (Placeholder) */}
+      <div className="header-group header-center">
+        <div className="header-search-placeholder">
+          <FaSearch />
+          <span>Pesquisar...</span>
         </div>
-      </header>
-      <TagManagerModal
-        isOpen={isTagModalOpen}
-        onRequestClose={() => setIsTagModalOpen(false)}
-      />
-    </>
+      </div>
+      
+      {/* Parte Direita: Informação do Utilizador */}
+      <div className="header-group header-right">
+        
+        {/* 3. O NOVO BOTÃO DE TEMA */}
+        <button
+          onClick={toggleTheme}
+          className="header-button theme-toggle"
+          title={theme === 'light' ? 'Mudar para Modo Noturno' : 'Mudar para Modo Claro'}
+        >
+          {theme === 'light' ? <FaMoon /> : <FaSun />}
+        </button>
+        
+        <span>Olá, {user?.name.split(' ')[0]}!</span>
+        <button onClick={onLogout} className="logout-button">
+          Sair
+        </button>
+      </div>
+    </header>
   );
 }

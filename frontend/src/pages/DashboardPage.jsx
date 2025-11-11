@@ -1,12 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { FaPlus } from 'react-icons/fa';
-import Header from '../components/Header';
+// Removido 'Header'
 import Note from '../components/Note';
 import CreateNoteModal from '../components/CreateNoteModal';
 import TagManagerModal from '../components/TagManagerModal';
+import ViewNoteModal from '../components/ViewNoteModal';
 
-export default function DashboardPage({ user, onLogout }) {
+// Recebe as props 'isTagModalOpen' e 'setIsTagModalOpen' do App.jsx
+export default function DashboardPage({
+  user,
+  isTagModalOpen,
+  setIsTagModalOpen,
+}) {
   const [notes, setNotes] = useState([]);
   const [tags, setTags] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -14,19 +20,19 @@ export default function DashboardPage({ user, onLogout }) {
 
   // Estados dos Modais
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
-  const [isTagModalOpen, setIsTagModalOpen] = useState(false);
   const [noteToEdit, setNoteToEdit] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [noteToView, setNoteToView] = useState(null);
 
   const getToken = () => localStorage.getItem('token');
 
-  // Função para buscar todas as notas e marcadores
+  // Função para buscar dados (sem alterações)
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const config = {
         headers: { Authorization: `Bearer ${getToken()}` },
       };
-      // Buscar notas e marcadores em paralelo
       const [notesRes, tagsRes] = await Promise.all([
         axios.get('http://localhost:5000/api/notes', config),
         axios.get('http://localhost:5000/api/tags', config),
@@ -41,19 +47,17 @@ export default function DashboardPage({ user, onLogout }) {
     setIsLoading(false);
   }, []);
 
-  // Buscar os dados quando a página carregar
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // --- FUNÇÃO PARA GUARDAR (CRIAR ou EDITAR) NOTA ---
+  // Funções de guardar, apagar, fixar notas (sem alterações)
   const handleSaveNote = async (noteData) => {
     const config = {
       headers: { Authorization: `Bearer ${getToken()}` },
     };
     try {
       if (noteToEdit) {
-        // --- Lógica de EDITAR ---
         const { data: updatedNote } = await axios.put(
           `http://localhost:5000/api/notes/${noteToEdit._id}`,
           noteData,
@@ -63,7 +67,6 @@ export default function DashboardPage({ user, onLogout }) {
           notes.map((n) => (n._id === updatedNote._id ? updatedNote : n))
         );
       } else {
-        // --- Lógica de CRIAR ---
         const { data: newNote } = await axios.post(
           'http://localhost:5000/api/notes',
           noteData,
@@ -78,7 +81,6 @@ export default function DashboardPage({ user, onLogout }) {
     }
   };
 
-  // --- FUNÇÃO PARA MOVER PARA A LIXEIRA (CORREÇÃO) ---
   const handleDeleteNote = async (id) => {
     if (!window.confirm('Mover esta nota para a lixeira?')) return;
     try {
@@ -86,7 +88,6 @@ export default function DashboardPage({ user, onLogout }) {
         headers: { Authorization: `Bearer ${getToken()}` },
       };
       await axios.delete(`http://localhost:5000/api/notes/${id}`, config);
-      // Remove a nota da lista no ecrã
       setNotes(notes.filter((n) => n._id !== id));
     } catch (err) {
       setError('Falha ao mover para a lixeira.');
@@ -94,7 +95,6 @@ export default function DashboardPage({ user, onLogout }) {
     }
   };
 
-  // --- FUNÇÃO PARA FIXAR NOTA (CORREÇÃO) ---
   const handlePinNote = async (id) => {
     const noteToPin = notes.find((n) => n._id === id);
     if (!noteToPin) return;
@@ -102,7 +102,6 @@ export default function DashboardPage({ user, onLogout }) {
       const config = {
         headers: { Authorization: `Bearer ${getToken()}` },
       };
-      // Atualiza o estado 'isPinned'
       const { data: updatedNote } = await axios.put(
         `http://localhost:5000/api/notes/${id}`,
         { isPinned: !noteToPin.isPinned },
@@ -117,7 +116,7 @@ export default function DashboardPage({ user, onLogout }) {
     }
   };
 
-  // Lógica para abrir os modais
+  // Funções para abrir os modais (sem alterações)
   const openCreateModal = () => {
     setNoteToEdit(null);
     setIsNoteModalOpen(true);
@@ -126,19 +125,19 @@ export default function DashboardPage({ user, onLogout }) {
     setNoteToEdit(note);
     setIsNoteModalOpen(true);
   };
+  const handleViewNote = (note) => {
+    setNoteToView(note);
+    setIsViewModalOpen(true);
+  };
 
-  // Ordena as notas: fixadas primeiro, depois as mais recentes
+  // Ordenar notas (sem alterações)
   const sortedNotes = [...notes].sort(
     (a, b) => b.isPinned - a.isPinned || new Date(b.createdAt) - new Date(a.createdAt)
   );
 
   return (
-    <div className="dashboard-page">
-      <Header
-        user={user}
-        onLogout={onLogout}
-        onOpenTagManager={() => setIsTagModalOpen(true)}
-      />
+    // O <Header> foi removido daqui
+    <div className="dashboard-page"> 
       <main className="dashboard-container">
         {error && <p className="login-error">{error}</p>}
         {isLoading ? (
@@ -152,6 +151,7 @@ export default function DashboardPage({ user, onLogout }) {
                     key={note._id}
                     note={note}
                     tags={tags}
+                    onView={() => handleViewNote(note)}
                     onEdit={() => openEditModal(note)}
                     onDelete={() => handleDeleteNote(note._id)}
                     onPin={() => handlePinNote(note._id)}
@@ -169,6 +169,7 @@ export default function DashboardPage({ user, onLogout }) {
         <FaPlus />
       </button>
 
+      {/* Os Modais continuam a ser renderizados aqui */}
       <CreateNoteModal
         isOpen={isNoteModalOpen}
         onRequestClose={() => setIsNoteModalOpen(false)}
@@ -176,9 +177,17 @@ export default function DashboardPage({ user, onLogout }) {
         noteToEdit={noteToEdit}
         tags={tags}
       />
+      
       <TagManagerModal
         isOpen={isTagModalOpen}
         onRequestClose={() => setIsTagModalOpen(false)}
+      />
+
+      <ViewNoteModal
+        isOpen={isViewModalOpen}
+        onRequestClose={() => setIsViewModalOpen(false)}
+        note={noteToView}
+        tags={tags}
       />
     </div>
   );

@@ -1,130 +1,189 @@
 import asyncHandler from 'express-async-handler';
 import Note from '../models/noteModel.js';
 
-// --- FUNÇÕES EXISTENTES MODIFICADAS ---
-
-// @desc    Buscar todas as notas ativas do usuário
-// @route   GET /api/notes
-// @access  Privado
-const getNotes = asyncHandler(async (req, res) => {
-  const notes = await Note.find({
-    user: req.user._id,
-    isTrashed: false, // MODIFICADO: Apenas notas que não estão na lixeira
-  }).populate('tags'); // Continua a popular os marcadores
-
-  res.json(notes);
-});
-
+// --- FUNÇÃO DE CRIAR NOTA (ATUALIZADA) ---
 // @desc    Criar uma nova nota
 // @route   POST /api/notes
 // @access  Privado
 const createNote = asyncHandler(async (req, res) => {
-  const { title, content, color, tags } = req.body;
+  // 1. Adicionámos 'imageUrl'
+  const { title, content, color, tags, imageUrl } = req.body;
 
-  const note = new Note({
+  if (!content) {
+    res.status(400);
+    throw new Error('O conteúdo da nota não pode estar vazio.');
+  }
+
+  const note = await Note.create({
     user: req.user._id,
     title,
     content,
     color,
     tags,
+    imageUrl, // 2. Guardamos o 'imageUrl'
   });
 
-  const createdNote = await note.save();
-  const populatedNote = await Note.findById(createdNote._id).populate('tags'); // Popula após salvar
-  res.status(201).json(populatedNote);
+  if (note) {
+    const populatedNote = await Note.findById(note._id).populate(
+      'tags',
+      'name color'
+    );
+    res.status(201).json(populatedNote);
+  } else {
+    res.status(400);
+    throw new Error('Dados da nota inválidos.');
+  }
 });
 
+// --- FUNÇÃO DE ATUALIZAR NOTA (ATUALIZADA) ---
 // @desc    Atualizar uma nota
 // @route   PUT /api/notes/:id
 // @access  Privado
 const updateNote = asyncHandler(async (req, res) => {
-  const { title, content, color, isPinned, tags } = req.body;
+  // 1. Adicionámos 'imageUrl'
+  const { title, content, color, tags, imageUrl, isPinned } = req.body;
+
   const note = await Note.findById(req.params.id);
 
-  if (note && note.user.toString() === req.user._id.toString()) {
-    note.title = title ?? note.title;
-    note.content = content ?? note.content;
-    note.color = color ?? note.color;
-    note.isPinned = isPinned ?? note.isPinned;
-    note.tags = tags ?? note.tags;
-
-    const updatedNote = await note.save();
-    const populatedNote = await Note.findById(updatedNote._id).populate('tags');
-    res.json(populatedNote);
-  } else {
+  if (!note) {
     res.status(404);
-    throw new Error('Nota não encontrada ou utilizador não autorizado');
+    throw new Error('Nota não encontrada');
   }
+
+  // Verificar se o utilizador é o dono da nota
+  if (note.user.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error('Utilizador não autorizado');
+  }
+
+  // Atualiza apenas os campos que foram enviados
+  if (title !== undefined) note.title = title;
+  if (content !== undefined) note.content = content;
+  if (color !== undefined) note.color = color;
+  if (tags !== undefined) note.tags = tags;
+  if (isPinned !== undefined) note.isPinned = isPinned;
+  // 2. Adicionámos a lógica para atualizar o 'imageUrl'
+  if (imageUrl !== undefined) note.imageUrl = imageUrl;
+
+  const updatedNote = await note.save();
+  const populatedNote = await Note.findById(updatedNote._id).populate(
+    'tags',
+    'name color'
+  );
+
+  res.json(populatedNote);
 });
 
-// @desc    Mover uma nota para a lixeira (Soft Delete)
+// --- O RESTO DAS FUNÇÕES (getNotes, deleteNote, etc.) ---
+// (Não precisam de ser alteradas, mas estão aqui para o ficheiro ficar completo)
+
+// @desc    Buscar todas as notas ativas do utilizador
+// @route   GET /api/notes
+// @access  Privado
+const getNotes = asyncHandler(async (req, res) => {
+  const notes = await Note.find({
+    user: req.user._id,
+    isTrashed: false, // Apenas notas que NÃO estão na lixeira
+  })
+    .populate('tags', 'name color')
+    .sort({ isPinned: -1, updatedAt: -1 }); // Fixadas primeiro, depois as mais recentes
+
+  res.json(notes);
+});
+
+// @desc    Mover nota para a lixeira (Soft Delete)
 // @route   DELETE /api/notes/:id
 // @access  Privado
 const deleteNote = asyncHandler(async (req, res) => {
   const note = await Note.findById(req.params.id);
 
-  if (note && note.user.toString() === req.user._id.toString()) {
-    // MODIFICADO: Em vez de apagar, move para a lixeira
-    note.isTrashed = true;
-    note.trashedAt = new Date();
-    await note.save();
-    res.json({ message: 'Nota movida para a lixeira' });
-  } else {
+  if (!note) {
     res.status(404);
-    throw new Error('Nota não encontrada ou utilizador não autorizado');
+    throw new Error('Nota não encontrada');
   }
+
+  // Verificar se o utilizador é o dono
+  if (note.user.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error('Utilizador não autorizado');
+  }
+
+  note.isTrashed = true;
+  note.trashedAt = Date.now();
+  await note.save();
+
+  res.json({ message: 'Nota movida para a lixeira' });
 });
 
-// --- NOVAS FUNÇÕES DA LIXEIRA ---
-
-// @desc    Buscar todas as notas na lixeira
+// @desc    Buscar notas na lixeira
 // @route   GET /api/notes/trash
 // @access  Privado
 const getTrashedNotes = asyncHandler(async (req, res) => {
   const notes = await Note.find({
     user: req.user._id,
-    isTrashed: true, // Apenas notas na lixeira
-  }).populate('tags'); // Também popula os marcadores
+    isTrashed: true,
+  })
+    .populate('tags', 'name color')
+    .sort({ trashedAt: -1 }); // Mais recentes na lixeira primeiro
+
   res.json(notes);
 });
 
-// @desc    Restaurar uma nota da lixeira
-// @route   POST /api/notes/:id/restore
+// @desc    Restaurar nota da lixeira
+// @route   PUT /api/notes/:id/restore
 // @access  Privado
 const restoreNote = asyncHandler(async (req, res) => {
   const note = await Note.findById(req.params.id);
 
-  if (note && note.user.toString() === req.user._id.toString()) {
-    note.isTrashed = false;
-    note.trashedAt = null;
-    const restoredNote = await note.save();
-    const populatedNote = await Note.findById(restoredNote._id).populate('tags');
-    res.json(populatedNote);
-  } else {
+  if (!note) {
     res.status(404);
-    throw new Error('Nota não encontrada ou utilizador não autorizado');
+    throw new Error('Nota não encontrada');
   }
+
+  // Verificar se o utilizador é o dono
+  if (note.user.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error('Utilizador não autorizado');
+  }
+
+  note.isTrashed = false;
+  note.trashedAt = null;
+  await note.save();
+
+  res.json({ message: 'Nota restaurada com sucesso' });
 });
 
-// @desc    Apagar permanentemente uma nota
+// @desc    Apagar nota permanentemente
 // @route   DELETE /api/notes/:id/permanent
 // @access  Privado
 const deleteNotePermanent = asyncHandler(async (req, res) => {
   const note = await Note.findById(req.params.id);
 
-  if (note && note.user.toString() === req.user._id.toString()) {
-    await note.deleteOne(); // Usa deleteOne() (ou remove())
-    res.json({ message: 'Nota apagada permanentemente' });
-  } else {
+  if (!note) {
     res.status(404);
-    throw new Error('Nota não encontrada ou utilizador não autorizado');
+    throw new Error('Nota não encontrada');
   }
+
+  // Verificar se o utilizador é o dono
+  if (note.user.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error('Utilizador não autorizado');
+  }
+
+  // Garantir que a nota está na lixeira antes de apagar (opcional, mas é uma boa prática)
+  if (!note.isTrashed) {
+    res.status(400);
+    throw new Error('Apenas notas na lixeira podem ser apagadas permanentemente.');
+  }
+
+  await note.deleteOne();
+
+  res.json({ message: 'Nota apagada permanentemente' });
 });
 
-// --- EXPORTS ---
 export {
-  getNotes,
   createNote,
+  getNotes,
   updateNote,
   deleteNote,
   getTrashedNotes,

@@ -3,25 +3,25 @@ import mongoose from 'mongoose';
 const noteSchema = mongoose.Schema(
   {
     user: {
-      type: mongoose.Schema.Types.ObjectId, // Armazena o ID do usuário
+      type: mongoose.Schema.Types.ObjectId,
       required: true,
-      ref: 'User', // Cria uma referência ao nosso model 'User'
+      ref: 'User',
     },
     title: {
       type: String,
-      required: false, // O título será opcional
+      required: false,
     },
     content: {
       type: String,
-      required: true, // O conteúdo é obrigatório
+      required: true,
     },
     color: {
       type: String,
-      default: '#FFFFFF', // Uma cor padrão (branco)
+      default: '#FFFFFF',
     },
     isPinned: {
       type: Boolean,
-      default: false, // Por padrão, uma nota não é fixada
+      default: false,
     },
     tags: [
       {
@@ -29,7 +29,13 @@ const noteSchema = mongoose.Schema(
         ref: 'Tag',
       },
     ],
-    // --- NOVOS CAMPOS PARA A LIXEIRA ---
+    // --- NOVO CAMPO ADICIONADO ---
+    imageUrl: {
+      type: String,
+      required: false,
+      default: '',
+    },
+    // --- FIM DO NOVO CAMPO ---
     isTrashed: {
       type: Boolean,
       default: false,
@@ -38,12 +44,14 @@ const noteSchema = mongoose.Schema(
       type: Date,
       default: null,
     },
-    // -------------------------------------
   },
   {
-    timestamps: true, // Cria os campos `createdAt` e `updatedAt`
+    timestamps: true,
   }
 );
+
+// Adiciona um índice para garantir que a pesquisa de texto funcione
+noteSchema.index({ title: 'text', content: 'text' });
 
 const Note = mongoose.model('Note', noteSchema);
 

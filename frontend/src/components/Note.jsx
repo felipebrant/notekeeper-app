@@ -6,9 +6,9 @@ import {
   FaThumbtack,
   FaUndo,
   FaTrashAlt,
+  FaEye, // 1. IMPORTAMOS O ÍCONE DO "OLHINHO"
 } from 'react-icons/fa';
 
-// Recebe os dados da nota e todas as funções do Dashboard/TrashPage
 export default function Note({
   note,
   tags,
@@ -17,11 +17,10 @@ export default function Note({
   onPin,
   onRestoreNote,
   onDeletePermanent,
+  onView, // 2. RECEBEMOS A NOVA FUNÇÃO 'onView'
 }) {
-  // Verifica se estamos na página da lixeira (se as props da lixeira existirem)
   const isTrashPage = onRestoreNote && onDeletePermanent;
 
-  // Encontra os objectos completos dos marcadores desta nota
   const noteTags =
     note.tags && tags
       ? note.tags.map((tagId) => tags.find((t) => t._id === tagId)).filter(Boolean)
@@ -32,25 +31,26 @@ export default function Note({
       className={`note-card ${note.isPinned ? 'pinned' : ''}`}
       style={{ borderTopColor: note.color }}
     >
-      {/* Título da Nota */}
+      {/* 3. A IMAGEM FOI REMOVIDA DESTA VISTA PRINCIPAL */}
+      
       {note.title && <h3 className="note-title">{note.title}</h3>}
+      
+      {/* Mostra apenas um preview do conteúdo para manter os cartões pequenos */}
+      <p className="note-content">
+        {note.content.substring(0, 150)}
+        {note.content.length > 150 ? '...' : ''}
+      </p>
 
-      {/* Conteúdo da Nota */}
-      <p className="note-content">{note.content}</p>
-
-      {/* Marcadores (Tags) */}
       <div className="note-tags">
         {noteTags.map((tag) => (
           <TagPill key={tag._id} tag={tag} />
         ))}
       </div>
 
-      {/* Botões de Ação */}
       <div className="note-actions">
         <div className="note-button-group">
-          {/* Mostra botões diferentes dependendo da página */}
           {isTrashPage ? (
-            // --- Botões da Lixeira ---
+            // Botões da Lixeira
             <>
               <button
                 className="note-action-button"
@@ -68,8 +68,16 @@ export default function Note({
               </button>
             </>
           ) : (
-            // --- Botões Normais do Dashboard ---
+            // Botões Normais do Dashboard
             <>
+              {/* 4. ADICIONÁMOS O NOVO BOTÃO DE VISUALIZAR */}
+              <button
+                className="note-action-button"
+                title="Visualizar Nota"
+                onClick={onView} // 5. LIGÁMOS A FUNÇÃO
+              >
+                <FaEye />
+              </button>
               <button
                 className={`note-action-button ${
                   note.isPinned ? 'pinned-active' : ''
