@@ -1,14 +1,24 @@
 import express from 'express';
 const router = express.Router();
 
-// Importa a nossa nova função
-import { createCard } from '../controllers/cardController.js';
-// Importa o "porteiro"
+import {
+  createCard,
+  moveCard,
+  updateCard,
+  deleteCardPermanent, // <- Alterado aqui
+} from '../controllers/cardController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
-// Define a rota:
-// Um 'POST' para '/api/cards' (que é a raiz '/')
-// vai ser protegido e depois vai chamar a função 'createCard'.
+// Rota para criar um cartão
 router.route('/').post(protect, createCard);
+
+// Novas rotas para um ID específico
+router
+  .route('/:id')
+  .put(protect, updateCard)
+  .delete(protect, deleteCardPermanent); // <- Alterado aqui
+
+// Rota para mover um cartão
+router.route('/:id/move').put(protect, moveCard);
 
 export default router;

@@ -416,7 +416,6 @@ body {
   border-radius: 5px;
   border: 1px solid var(--color-border-primary);
 }
-/* --- NOVO BOTÃO DE REMOVER IMAGEM --- */
 .modal-image-remove-button {
   position: absolute;
   top: 8px;
@@ -439,7 +438,7 @@ body {
 }
 
 
-/* --- CORREÇÃO DO RODAPÉ DO MODAL --- */
+/* Rodapé do Modal (CreateNoteModal E CardEditModal) */
 .modal-actions {
   display: flex;
   flex-direction: row; 
@@ -451,7 +450,11 @@ body {
   flex-shrink: 0;
   transition: border-color 0.2s ease;
 }
-/* --- FIM DA CORREÇÃO --- */
+/* Se um modal-actions só tiver o grupo de botões */
+.modal-actions:has(.modal-button-group:only-child) {
+  justify-content: flex-end;
+}
+
 
 .modal-button-group {
   display: flex;
@@ -513,29 +516,26 @@ body {
   border-width: 2px;
 }
 
-/* --- ESTILOS DO GESTOR DE MARCADORES --- */
+/* Estilos do Gestor de Marcadores */
 .tag-manager-list { 
   list-style-type: none; 
   padding: 0; 
   max-height: 200px; 
   overflow-y: auto; 
   margin-top: 1rem;
-  /* NOVO: Para fazer os itens fluírem melhor */
   display: flex;
   flex-wrap: wrap;
-  gap: 8px; /* Espaçamento entre os itens */
+  gap: 8px;
 }
 .tag-manager-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.3rem 0.5rem; /* Ajuste o padding */
+  padding: 0.3rem 0.5rem;
   border-radius: 5px;
-  margin-bottom: 0; /* Removido o margin-bottom para usar o gap */
+  margin-bottom: 0;
   transition: background-color 0.2s;
-  /* NOVO: Para que o item não ocupe toda a largura disponível */
   flex-shrink: 0; 
-  /* NOVO: Definir um max-width para cada item */
   max-width: 100%; 
 }
 .tag-manager-item:hover { background-color: var(--color-bg-secondary); }
@@ -544,7 +544,6 @@ body {
   padding: 3px 10px;
   font-size: 0.8rem;
   font-weight: 500;
-  /* NOVO: Para que o conteúdo não quebre o layout */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -603,4 +602,502 @@ body {
   white-space: pre-wrap;
   word-wrap: break-word;
   margin-top: 0;
+}
+
+
+/* --- ESTILOS PARA A PÁGINA DE QUADROS --- */
+.create-board-form {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  background-color: var(--color-bg-primary);
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: var(--shadow-primary);
+}
+.create-board-form input {
+  flex-grow: 1;
+  margin-bottom: 0;
+}
+.create-board-form button {
+  flex-shrink: 0;
+  border: none;
+  padding: 0.7rem 1.5rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  background-color: var(--color-primary-button);
+  color: white;
+}
+.create-board-form button:hover {
+  background-color: var(--color-primary-button-hover);
+}
+
+
+/* Linha divisória */
+.divider {
+  border: 0;
+  border-top: 1px solid var(--color-border-primary);
+  margin: 2rem 0;
+}
+
+/* Grelha para os cartões dos quadros */
+.boards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Cartão de um Quadro */
+.board-card {
+  background: var(--color-bg-primary);
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: var(--shadow-primary);
+  min-height: 120px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-top: 5px solid var(--color-primary-button);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative; /* Para os botões */
+}
+.board-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+[data-theme="dark"] .board-card:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.board-card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  word-wrap: break-word;
+}
+.board-card-info {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+/* Botões no cartão do quadro */
+.board-card-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 5px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.board-card:hover .board-card-actions {
+  opacity: 1;
+}
+.board-action-button {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border: none;
+  border-radius: 5px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.board-action-button:hover {
+  background-color: var(--color-bg-secondary-hover);
+}
+
+
+/* --- ESTILOS PARA A PÁGINA TRELLO (DETALHE DO QUADRO) --- */
+
+.board-detail-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.board-column-list {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  padding: 1.5rem 2rem;
+  overflow-x: auto; 
+  overflow-y: hidden;
+  flex-grow: 1;
+}
+
+/* Coluna (Lista) */
+.board-column {
+  width: 280px; 
+  flex-shrink: 0;
+  background-color: var(--color-bg-secondary);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+}
+.column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+}
+.column-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  cursor: grab;
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 10px;
+}
+.column-header-actions {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.column-action-button {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.column-action-button:hover {
+  background-color: var(--color-bg-secondary-hover);
+  color: var(--color-text-primary);
+}
+
+/* Lista de Cartões */
+.column-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0 1rem 1rem 1rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-height: 50px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+.column-card-list.dragging-over {
+  background-color: var(--color-bg-secondary-hover);
+}
+
+
+/* Cartão (Tarefa) */
+.column-card {
+  background-color: var(--color-bg-primary);
+  border-radius: 5px;
+  box-shadow: var(--shadow-primary);
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  cursor: grab;
+  transition: all 0.2s ease;
+  word-wrap: break-word;
+  position: relative; /* Para os botões flutuarem */
+}
+.column-card.dragging {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  transform: rotate(3deg);
+}
+
+.card-image-preview {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 5px;
+  margin-bottom: 0.5rem;
+}
+
+/* Botões de Ação no Cartão */
+.card-action-buttons {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.column-card:hover .card-action-buttons {
+  opacity: 1;
+}
+.card-action-button {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border: none;
+  border-radius: 5px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+.card-action-button:hover {
+  background-color: var(--color-bg-secondary-hover);
+}
+
+/* Formulário "Adicionar outra lista" */
+.add-list-button {
+  width: 280px;
+  flex-shrink: 0;
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-secondary-hover);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.2s ease;
+}
+.add-list-button:hover {
+  background-color: var(--color-bg-secondary);
+}
+[data-theme="dark"] .add-list-button {
+  color: var(--color-text-secondary);
+}
+[data-theme="dark"] .add-list-button:hover {
+  color: var(--color-text-primary);
+}
+.add-list-form {
+  width: 280px;
+  flex-shrink: 0;
+  background-color: var(--color-bg-secondary);
+  border-radius: 8px;
+  padding: 1rem;
+}
+.add-list-form input {
+  margin-bottom: 0.75rem;
+}
+.add-list-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.add-list-controls .button-primary {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+.add-list-controls .modal-close-button {
+  font-size: 1.2rem;
+  padding: 0.5rem;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+}
+.add-list-controls .modal-close-button:hover {
+  background-color: var(--color-bg-secondary-hover);
+}
+
+/* Formulário "Adicionar um cartão" */
+.add-card-button {
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background-color: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.2s ease;
+  margin: 0 1rem 0.5rem 1rem;
+}
+.add-card-button:hover {
+  background-color: var(--color-bg-secondary-hover);
+  color: var(--color-text-primary);
+}
+.add-card-form {
+  padding: 0 1rem 1rem 1rem;
+}
+.add-card-textarea {
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  padding: 0.75rem;
+  font-size: 0.95rem;
+  border-radius: 5px;
+  border: 1px solid var(--color-border-input);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: 'Poppins', sans-serif;
+  margin-bottom: 0.75rem;
+  box-shadow: var(--shadow-primary);
+}
+
+/* Secção de Comentários */
+.comment-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border-primary);
+}
+.comment-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+.comment-list {
+  max-height: 250px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.comment-item {
+  background-color: var(--color-bg-secondary);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+}
+.comment-item strong {
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+}
+.comment-item p {
+  margin: 0.25rem 0 0.5rem 0;
+  font-size: 0.95rem;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.comment-date {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+.comment-empty {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+.comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.comment-form textarea {
+  margin-bottom: 0;
+}
+.comment-form button {
+  align-self: flex-end;
+}
+/* --- ADICIONE ESTE NOVO BLOCO NO FIM DO SEU index.css --- */
+
+/* Estilos para o Cabeçalho da Página do Quadro (Título + Membros) */
+.board-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 2rem; /* Alinha com o padding da lista de colunas */
+}
+.board-members-list {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.member-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--color-primary-button);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border: 2px solid var(--color-bg-primary);
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+  cursor: default;
+}
+
+/* Estilos para o Modal de Partilha */
+.share-form {
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border-primary);
+}
+.share-form label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+.share-form-inputs {
+  display: flex;
+  gap: 0.75rem;
+}
+.share-form-inputs input {
+  flex-grow: 1;
+  margin-bottom: 0;
+}
+.share-form-inputs button {
+  flex-shrink: 0;
+}
+.success-message {
+  margin-top: 1rem;
+  color: #2f9e44; /* Verde */
+  font-weight: 500;
+}
+
+.members-list h4 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+.member-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-border-primary);
+}
+.member-item:last-child {
+  border-bottom: none;
+}
+.member-info {
+  display: flex;
+  flex-direction: column;
+}
+.member-info strong {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+.member-info span {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+.owner-tag {
+  font-size: 0.75rem !important; /* !important para sobrepor o estilo de 'span' */
+  font-weight: 600;
+  color: var(--color-brand) !important;
+  background-color: var(--color-bg-accent);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+  align-self: flex-start;
 }

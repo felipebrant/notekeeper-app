@@ -1,12 +1,11 @@
 import asyncHandler from 'express-async-handler';
-import Board from '../models/boardModel.js'; // Precisamos para verificar o dono
-import List from '../models/listModel.js';   // O nosso novo "molde" de Lista
+import Board from '../models/boardModel.js';
+import List from '../models/listModel.js';
+import Card from '../models/cardModel.js';
+import Comment from '../models/commentModel.js';
 
-// @desc    Criar uma nova Lista (coluna)
-// @route   POST /api/lists
-// @access  Privado
+// --- FUNÇÃO DE CRIAR LISTA (Já existe, mantemos) ---
 const createList = asyncHandler(async (req, res) => {
-  // O frontend precisa de nos enviar o nome da lista e a que quadro ela pertence
   const { name, boardId } = req.body;
 
   if (!name || !boardId) {
@@ -14,27 +13,24 @@ const createList = asyncHandler(async (req, res) => {
     throw new Error('O nome da lista e o ID do quadro são obrigatórios.');
   }
 
-  // 1. Encontrar o quadro
   const board = await Board.findById(boardId);
-
   if (!board) {
     res.status(404);
     throw new Error('Quadro não encontrado.');
   }
 
-  // 2. Verificar se o utilizador é o dono do quadro
-  // (Mais tarde, podemos mudar isto para 'members' em vez de 'owner')
-  if (board.owner.toString() !== req.user._id.toString()) {
-    res.status(401); // Não autorizado
-    throw new Error('Apenas o dono do quadro pode adicionar listas.');
+  // Agora, qualquer membro pode adicionar uma lista, não só o dono
+  const isMember = board.members.some(
+    (memberId) => memberId.toString() === req.user._id.toString()
+  );
+  if (!isMember) {
+    res.status(401);
+    throw new Error('Apenas membros do quadro podem adicionar listas.');
   }
 
-  // 3. Calcular a posição da nova lista
-  // Vamos contar quantas listas já existem neste quadro
   const listCount = await List.countDocuments({ board: boardId });
-  const position = listCount; // A nova lista será a última (posição 0, 1, 2...)
+  const position = listCount;
 
-  // 4. Criar a lista
   const list = await List.create({
     name,
     board: boardId,
@@ -49,5 +45,72 @@ const createList = asyncHandler(async (req, res) => {
   }
 });
 
-// Exporta as funções
-export { createList };
+// --- NOVA FUNÇÃO ---
+// @desc    Atualizar uma Lista (mudar nome)
+// @route   PUT /api/lists/:id
+// @access  Privado (Apenas Membros)
+const updateList = asyncHandler(async (req, res) => {
+  const { name } = req.body;
+  const list = await List.findById(req.params.id);
+
+  if (!list) {
+    res.status(404);
+    throw new Error('Lista não encontrada.');
+  }
+
+  // Verificar se o utilizador é membro do quadro
+  const board = await Board.findById(list.board);
+  const isMember = board.members.some(
+    (memberId) => memberId.toString() === req.user._id.toString()
+  );
+  if (!isMember) {
+    res.status(401);
+    throw new Error('Apenas membros do quadro podem editar listas.');
+  }
+
+  list.name = name || list.name;
+  const updatedList = await list.save();
+  res.json(updatedList);
+});
+
+// --- NOVA FUNÇÃO ---
+// @desc    Apagar uma Lista (e todos os seus cartões)
+// @route   DELETE /api/lists/:id
+// @access  Privado (Apenas Membros)
+const deleteList = asyncHandler(async (req, res) => {
+  const list = await List.findById(req.params.id);
+
+  if (!list) {
+    res.status(404);
+    throw new Error('Lista não encontrada.');
+  }
+
+  // Verificar se o utilizador é membro do quadro
+  const board = await Board.findById(list.board);
+  const isMember = board.members.some(
+    (memberId) => memberId.toString() === req.user._id.toString()
+  );
+  if (!isMember) {
+    res.status(401);
+    throw new Error('Apenas membros do quadro podem apagar listas.');
+  }
+
+  // 1. Encontrar todos os cartões desta lista
+  const cards = await Card.find({ list: list._id });
+  const cardIds = cards.map(c => c._id);
+  
+  // 2. Apagar todos os comentários desses cartões
+  await Comment.deleteMany({ card: { $in: cardIds } });
+
+  // 3. Apagar todos os cartões
+  await Card.deleteMany({ list: list._id });
+
+  // 4. Apagar a lista
+  await list.deleteOne();
+
+  res.json({ message: 'Lista e todos os seus cartões foram apagados.' });
+});
+
+
+// Exporta todas as funções
+export { createList, updateList, deleteList };

@@ -1,14 +1,20 @@
 import express from 'express';
 const router = express.Router();
 
-// Importa a nossa nova função
-import { createList } from '../controllers/listController.js';
-// Importa o "porteiro"
+import {
+  createList,
+  updateList,
+  deleteList,
+} from '../controllers/listController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
-// Define a rota:
-// Um 'POST' para '/api/lists' (que é a raiz '/')
-// vai ser protegido e depois vai chamar a função 'createList'.
+// Rota para criar lista
 router.route('/').post(protect, createList);
+
+// Novas rotas para um ID específico
+router
+  .route('/:id')
+  .put(protect, updateList) // Renomear
+  .delete(protect, deleteList); // Apagar
 
 export default router;

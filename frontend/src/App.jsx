@@ -1,28 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
+// 1. Importamos o 'Outlet' para o nosso novo layout privado
+import { Routes, Route, useNavigate, Navigate, Outlet } from 'react-router-dom';
 
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import DashboardPage from './pages/DashboardPage';
+import DashboardPage from './pages/DashboardPage'; // <-- O nosso dashboard de Notas
 import TrashPage from './pages/TrashPage';
+import BoardsDashboardPage from './pages/BoardsDashboardPage';
+import BoardDetailPage from './pages/BoardDetailPage';
 
 // Hook personalizado para gerir o tema (lógica do Dark Mode)
 function useTheme() {
-  // 1. Tenta ler o tema do localStorage, ou usa 'light' como padrão
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem('theme');
     return savedTheme || 'light';
   });
 
-  // 2. Sempre que o 'theme' mudar, atualiza o localStorage E o HTML
   useEffect(() => {
     localStorage.setItem('theme', theme);
-    // Adiciona o atributo data-theme="light" ou data-theme="dark" ao <html>
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // 3. Função para trocar o tema
   const toggleTheme = () => {
     setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
   };
@@ -30,15 +29,42 @@ function useTheme() {
   return { theme, toggleTheme };
 }
 
+// --- 2. O NOSSO NOVO "GUARDA" DE ROTAS PRIVADAS ---
+// Este componente verifica se o utilizador está logado.
+const PrivateLayout = ({
+  user,
+  onLogout,
+  onOpenTagManager,
+  theme,
+  toggleTheme,
+}) => {
+  if (!user) {
+    // Se não há utilizador, redireciona para a página de login
+    return <Navigate to="/" replace />;
+  }
+
+  // Se o utilizador existe, mostra o Layout (com a sidebar e o header)
+  return (
+    <Layout
+      user={user}
+      onLogout={onLogout}
+      onOpenTagManager={onOpenTagManager}
+      theme={theme}
+      toggleTheme={toggleTheme}
+    />
+    // O <Outlet /> dentro do Layout irá renderizar
+    // as rotas filhas (DashboardPage, TrashPage, etc.)
+  );
+};
+
+// --- O NOSSO COMPONENTE APP PRINCIPAL ---
 export default function App() {
   const [user, setUser] = useState(null);
   const [isTagModalOpen, setIsTagModalOpen] = useState(false);
   const navigate = useNavigate();
-
-  // 4. Usamos o nosso novo hook
   const { theme, toggleTheme } = useTheme();
 
-  // Verifica se o utilizador já está logado
+  // Verifica se o utilizador já está logado (sem alterações)
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     const token = localStorage.getItem('token');
@@ -47,24 +73,26 @@ export default function App() {
     }
   }, []);
 
-  // Funções de Login e Logout
+  // Funções de Login e Logout (sem alterações)
   const handleLogin = (userData, token) => {
     localStorage.setItem('user', JSON.stringify(userData));
     localStorage.setItem('token', token);
     setUser(userData);
-    navigate('/dashboard');
+    navigate('/dashboard'); // O login leva-o para as Notas Pessoais por defeito
   };
 
   const handleLogout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     setUser(null);
-    navigate('/');
+    navigate('/'); // Manda o utilizador para a página de login
   };
 
   return (
+    // 3. A NOVA ESTRUTURA DE ROTAS (limpa e correta)
     <Routes>
       {/* --- ROTAS PÚBLICAS --- */}
+      {/* A página de Login agora é a nossa rota raiz "/" */}
       <Route
         path="/"
         element={
@@ -78,27 +106,22 @@ export default function App() {
         }
       />
       
-      {/* --- ROTAS PRIVADAS (O NOVO LAYOUT) --- */}
+      {/* --- ROTAS PRIVADAS --- */}
+      {/* Todas as rotas aqui dentro são "guardadas" pelo PrivateLayout */}
       <Route
-        path="/"
         element={
-          user ? (
-            <Layout
-              user={user}
-              onLogout={handleLogout}
-              onOpenTagManager={() => setIsTagModalOpen(true)}
-              // 5. Passamos o tema e a função de troca para o Layout
-              theme={theme}
-              toggleTheme={toggleTheme}
-            />
-          ) : (
-            <Navigate to="/" />
-          )
+          <PrivateLayout
+            user={user}
+            onLogout={handleLogout}
+            onOpenTagManager={() => setIsTagModalOpen(true)}
+            theme={theme}
+            toggleTheme={toggleTheme}
+          />
         }
       >
-        {/* Páginas Filhas */}
+        {/* Módulo de Notas Pessoais */}
         <Route
-          path="dashboard"
+          path="/dashboard"
           element={
             <DashboardPage
               user={user}
@@ -108,14 +131,24 @@ export default function App() {
           }
         />
         <Route
-          path="trash"
+          path="/trash"
           element={<TrashPage user={user} onLogout={handleLogout} />}
         />
+        
+        {/* Módulo Trello */}
         <Route
-          index
-          element={<Navigate to="/dashboard" />}
+          path="/boards"
+          element={<BoardsDashboardPage user={user} />}
+        />
+        <Route
+          path="/boards/:boardId"
+          element={<BoardDetailPage user={user} />}
         />
       </Route>
+      
+      {/* Rota "apanha-tudo" - se não encontrar, volta ao início */}
+      <Route path="*" element={<Navigate to="/" />} />
+      
     </Routes>
   );
 }
