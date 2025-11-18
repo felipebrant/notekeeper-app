@@ -1,23 +1,41 @@
 import asyncHandler from 'express-async-handler';
 import Board from '../models/boardModel.js';
-import List from '../models/listModel.js';
+import List from '../models/listModel.js'; // 1. PRECISAMOS DE IMPORTAR O MOLDE DE LISTAS
 import Card from '../models/cardModel.js';
 import Comment from '../models/commentModel.js';
 import User from '../models/userModel.js';
 
-// --- FUNÇÃO DE CRIAR QUADRO (Sem alterações) ---
+// --- FUNÇÃO DE CRIAR QUADRO (ATUALIZADA) ---
+// @desc    Criar um novo Quadro
+// @route   POST /api/boards
+// @access  Privado (precisa de token)
 const createBoard = asyncHandler(async (req, res) => {
-  // (Código de createBoard ... sem alterações)
   const { name } = req.body;
   if (!name) {
     res.status(400);
     throw new Error('O nome do quadro é obrigatório.');
   }
+
+  // 1. Cria o quadro
   const board = await Board.create({
     name,
     owner: req.user._id,
   });
+
   if (board) {
+    // 2. --- A NOVA MÁGICA ESTÁ AQUI ---
+    // Se o quadro foi criado, cria as 3 listas (status) padrão
+    try {
+      await List.create([
+        { name: "Pendente", board: board._id, position: 0 },
+        { name: "Em Processo", board: board._id, position: 1 },
+        { name: "Finalizado", board: board._id, position: 2 },
+      ]);
+    } catch (listError) {
+      console.error("Falha ao criar listas padrão:", listError);
+      // (Numa app de produção, poderíamos apagar o quadro se as listas falharem)
+    }
+    // 3. Devolve o quadro criado
     res.status(201).json(board);
   } else {
     res.status(400);
@@ -35,18 +53,15 @@ const getBoards = asyncHandler(async (req, res) => {
   res.json(boards);
 });
 
-// --- FUNÇÃO DE BUSCAR QUADRO POR ID (ATUALIZADA) ---
-// @desc    Buscar um Quadro único por ID (com listas e cartões)
-// @route   GET /api/boards/:id
-// @access  Privado
+// --- FUNÇÃO DE BUSCAR QUADRO POR ID (Sem alterações) ---
 const getBoardById = asyncHandler(async (req, res) => {
-  // 1. ATUALIZAÇÃO: Adicionamos .populate() para buscar os membros
+  // (Código de getBoardById ... sem alterações)
   const board = await Board.findById(req.params.id).populate(
-    'owner', // Busca o dono
-    'name email' // E quer apenas o nome e email dele
+    'owner',
+    'name email'
   ).populate(
-    'members', // Busca a lista de membros
-    'name email' // E quer apenas o nome e email deles
+    'members',
+    'name email'
   );
 
   if (!board || board.isTrashed) {
@@ -200,39 +215,27 @@ const deleteBoardPermanent = asyncHandler(async (req, res) => {
   res.json({ message: 'Quadro e todos os seus dados foram apagados permanentemente.' });
 });
 
-// --- NOVA FUNÇÃO ---
-// @desc    Remover um membro de um Quadro
-// @route   DELETE /api/boards/:id/members/:memberId
-// @access  Privado (Apenas Dono)
+// --- FUNÇÃO DE REMOVER MEMBRO (Sem alterações) ---
 const removeMemberFromBoard = asyncHandler(async (req, res) => {
+  // (Código de removeMemberFromBoard ... sem alterações)
   const { id: boardId, memberId } = req.params;
-
   const board = await Board.findById(boardId);
   if (!board) {
     res.status(404);
     throw new Error('Quadro não encontrado.');
   }
-
-  // 1. VERIFICAÇÃO DE SEGURANÇA: Só o dono pode remover membros
   if (board.owner.toString() !== req.user._id.toString()) {
     res.status(401);
     throw new Error('Apenas o dono do quadro pode remover membros.');
   }
-  
-  // 2. VERIFICAÇÃO DE LÓGICA: Não pode remover o próprio dono
   if (board.owner.toString() === memberId) {
     res.status(400);
     throw new Error('O dono não pode ser removido do quadro.');
   }
-
-  // 3. Remove o membro da lista
   board.members = board.members.filter(
     (m) => m.toString() !== memberId
   );
-  
   await board.save();
-  
-  // 4. Devolve a nova lista de membros
   const updatedBoard = await Board.findById(boardId).populate(
     'members',
     'name email'
@@ -252,5 +255,5 @@ export {
   getTrashedBoards,
   restoreBoard,
   deleteBoardPermanent,
-  removeMemberFromBoard, // <-- A nossa nova função
+  removeMemberFromBoard,
 };
